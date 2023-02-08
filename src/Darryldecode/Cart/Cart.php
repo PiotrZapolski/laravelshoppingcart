@@ -57,7 +57,7 @@ class Cart
 
     /**
      * This holds the currently added item id in cart for association
-     * 
+     *
      * @var
      */
     protected $currentItemId;
@@ -149,33 +149,27 @@ class Cart
         // if the first argument is an array,
         // we will need to call add again
         if (is_array($id)) {
-            // the first argument is an array, now we will need to check if it is a multi dimensional
-            // array, if so, we will iterate through each item and call add again
-            if (Helpers::isMultiArray($id)) {
-                foreach ($id as $item) {
-                    $this->add(
-                        $item['id'],
-                        $item['name'],
-                        $item['price_pln'],
-                        $item['price_eur'],
-                        $item['quantity'],
-                        Helpers::issetAndHasValueOrAssignDefault($item['attributes'], array()),
-                        Helpers::issetAndHasValueOrAssignDefault($item['associatedModel'], null)
-                    );
-                }
-            } else {
-                $this->add(
-                    $id['id'],
-                    $id['name'],
-                    $id['price_pln'],
-                    $id['price_eur'],
-                    $id['quantity'],
-                    Helpers::issetAndHasValueOrAssignDefault($id['attributes'], array()),
-                    Helpers::issetAndHasValueOrAssignDefault($id['associatedModel'], null)
-                );
+            $attributes = $id['attributes'];
+            if($attributes['option_id'] != null && strpos($id['id'], '_') == false)
+            {
+                $id['id']= $id['id'] . '_' . $attributes['option_id'];
             }
 
+            $this->add(
+                $id['id'],
+                $id['name'],
+                $id['price_pln'],
+                $id['price_eur'],
+                $id['quantity'],
+                Helpers::issetAndHasValueOrAssignDefault($attributes, array()),
+                Helpers::issetAndHasValueOrAssignDefault($id['associatedModel'], null)
+            );
+
             return $this;
+        }
+        if($attributes['option_id'] != null && strpos($id, '_') == false)
+        {
+            $id = $id . '_' . $attributes['option_id'];
         }
 
         $data = array(
@@ -199,10 +193,13 @@ class Cart
 
         // if the item is already in the cart we will just update it
         if ($cart->has($id)) {
-
-            $this->update($id, $item);
+            if($cart->get($id)->attributes->option_id != null && $cart->get($id)->attributes->option_id == $attributes['option_id']){
+                $this->update($id, $item);
+            }
+            else{
+                $this->addRow($id, $item);
+            }
         } else {
-
             $this->addRow($id, $item);
         }
 
@@ -223,6 +220,13 @@ class Cart
      */
     public function update($id, $data)
     {
+        if(isset($data['attributes'])){
+            if($data['attributes']->option_id != null && strpos($id, '_') == false)
+            {
+                $id = $id . '_' . $data['attributes']->option_id;
+            }
+        }
+
         if ($this->fireEvent('updating', $data) === false) {
             return false;
         }
