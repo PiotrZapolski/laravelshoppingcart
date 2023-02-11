@@ -196,6 +196,9 @@ class Cart
             if($cart->get($id)->attributes->option_id != null && $cart->get($id)->attributes->option_id == $attributes['option_id']){
                 $this->update($id, $item);
             }
+            elseif($cart->get($id)->attributes->option_id == null){
+                $this->update($id, $item);
+            }
             else{
                 $this->addRow($id, $item);
             }
